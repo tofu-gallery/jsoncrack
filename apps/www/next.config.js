@@ -1,3 +1,6 @@
+// Modified by Tofu for the Tofu app gallery; TOFU.md at the repository root lists every change.
+// - No `output: "export"`: `next build` makes a standard Next.js app, which `next start` and
+//   Tofu's Next.js hosting serve. Upstream exports a static site to `out/` instead.
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
@@ -6,7 +9,6 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
  * @type {import('next').NextConfig}
  */
 const config = {
-  output: "export",
   reactStrictMode: false,
   productionBrowserSourceMaps: true,
   compiler: {
