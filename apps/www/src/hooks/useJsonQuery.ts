@@ -1,3 +1,5 @@
+// Modified by Tofu for the Tofu app gallery (see TOFU.md at the repository root): `updateJson`
+// calls jq-web 0.6's API. Upstream calls `jq.promised.json`, which jq-web 0.6 no longer has.
 import toast from "react-hot-toast";
 import useFile from "../store/useFile";
 import useJson from "../store/useJson";
@@ -13,8 +15,10 @@ const useJsonQuery = () => {
 
   const updateJson = async (query: string, cb?: () => void) => {
     try {
-      const jq = await import("jq-web");
-      const res = await jq.promised.json(JSON.parse(getJson()), query);
+      // jq-web 0.6 exports a promise of `{ json, raw }`; the bundler may hand back either.
+      const mod = await import("jq-web");
+      const jq = "json" in mod ? mod : await mod.default;
+      const res = jq.json(JSON.parse(getJson()), query);
 
       setContents({ contents: JSON.stringify(res, null, 2) });
       cb?.();

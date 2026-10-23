@@ -4,10 +4,29 @@
 // - `nextjs-google-analytics` resolves to `shims/nextjs-google-analytics.ts`, a no-op, so a copy
 //   ships no Google Analytics code. `transpilePackages` makes the server bundle take the same
 //   alias; without it Next.js loads the real package on the server.
+// - The client build emits jq-web's `jq.wasm` as `static/chunks/jq.wasm` (`emitJqWasm`).
+const fs = require("fs");
 const path = require("path");
 
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
+});
+
+// jq-web fetches `jq.wasm` from the folder its chunk was loaded from, `/_next/static/chunks/`,
+// but nothing puts the file there, so Tools > JSON Query (jq) failed with a 404. This copies
+// it beside the chunks.
+const emitJqWasm = webpack => ({
+  apply(compiler) {
+    compiler.hooks.thisCompilation.tap("TofuEmitJqWasm", compilation => {
+      compilation.hooks.processAssets.tap(
+        { name: "TofuEmitJqWasm", stage: webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL },
+        () => {
+          const wasm = fs.readFileSync(require.resolve("jq-web/jq.wasm"));
+          compilation.emitAsset("static/chunks/jq.wasm", new webpack.sources.RawSource(wasm));
+        }
+      );
+    });
+  },
 });
 
 /**
@@ -28,7 +47,7 @@ const config = {
       "nextjs-google-analytics": "./shims/nextjs-google-analytics.ts",
     },
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     config.resolve.fallback = { fs: false };
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -39,6 +58,7 @@ const config = {
 
     if (!isServer) {
       config.output.environment = { ...config.output.environment, asyncFunction: true };
+      config.plugins.push(emitJqWasm(webpack));
     }
 
     return config;
