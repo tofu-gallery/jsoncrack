@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm --filter jsoncrack-react build && pnpm --filter www build",
+  "outputDirectory": "apps/www/.next"
+}
